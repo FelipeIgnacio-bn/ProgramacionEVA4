@@ -7,7 +7,7 @@ ROUTER = {
     "host": "192.168.56.101",
     "port": "443",
     "user": "cisco",
-    "password": "cisco"
+    "password": "cisco123!"
 }
 
 HEADERS = {
@@ -95,6 +95,20 @@ def agregar_loopback():
     else:
         print("Error al crear la interfaz Loopback:", response.status_code, response.text)
 
+def eliminar_loopback():
+    interfaz = input("Nombre de la interfaz Loopback a eliminar (ej. Loopback100): ")
+
+    url = f"{BASE_URL}/ietf-interfaces:interfaces/interface={interfaz}"
+
+    response = requests.delete(url, auth=(ROUTER["user"], ROUTER["password"]),
+                               headers=HEADERS, verify=False)
+
+    if response.status_code in [200, 204]:
+        print(f"Loopback {interfaz} eliminada con éxito.")
+    else:
+        print("Error al eliminar la interfaz Loopback:", response.status_code, response.text)
+
+
 
 def ver_hostname():
     url = f"{BASE_URL}/Cisco-IOS-XE-native:native/hostname"
@@ -115,8 +129,9 @@ def menu():
         print("1. Ver interfaces")
         print("2. Cambiar descripción de interfaz")
         print("3. Crear interfaz loopback")
-        print("4. Ver hostname")
-        print("5. Salir")
+        print("4. Eliminar interfaz loopback")
+        print("5. Ver hostname")
+        print("6. Salir")
         opcion = input("Seleccione una opción: ")
 
         if opcion == "1":
@@ -126,8 +141,10 @@ def menu():
         elif opcion == "3":
             agregar_loopback()
         elif opcion == "4":
+            eliminar_loopback()
+        elif opcion == "5":
             ver_hostname()
-        elif opcion == "5"
+        elif opcion == "6"
             break
         else:
             print("Opción inválida")
