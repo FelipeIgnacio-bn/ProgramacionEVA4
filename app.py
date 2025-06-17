@@ -23,7 +23,7 @@ HEADERS = {
     "Content-Type": "application/yang-data+json"
 }
 
-BASE_URL = f"https://{ROUTER['host']}:{ROUTER['port']}/restconf/data"
+BASE_URL = None  # BASE_URL will be dynamically set based on the selected router
 
 # Desactiva advertencias de certificado
 requests.packages.urllib3.disable_warnings()
@@ -45,8 +45,8 @@ def seleccionar_router():
         print("Selección inválida. Usando router1 por defecto.")
         return ROUTERS["router1"]
 
-def ver_interfaces():
-   base_url = f"https://{router['host']}:{router['port']}/restconf/data"
+def ver_interfaces(router):
+    base_url = f"https://{router['host']}:{router['port']}/restconf/data"
     url = f"{base_url}/ietf-interfaces:interfaces"
     response = requests.get(url, auth=(router["user"], router["password"]),
                             headers=HEADERS, verify=False)
@@ -63,7 +63,7 @@ def ver_interfaces():
         print("Error al obtener interfaces:", response.status_code, response.text)
 
 
-def cambiar_descripcion_interfaz():
+def cambiar_descripcion_interfaz(router):
     interfaz = input("Nombre de la interfaz (ej. GigabitEthernet1): ")
     descripcion = input("Nueva descripción: ")
 
@@ -87,7 +87,7 @@ def cambiar_descripcion_interfaz():
         print("Error al actualizar la descripción:", response.status_code, response.text)
 
 
-def agregar_loopback():
+def agregar_loopback(router):
     interfaz = input("Nombre de la interfaz Loopback (ej. Loopback100): ")
     ip = input("Dirección IP (ej. 10.1.1.1): ")
     mascara = input("Máscara de subred (ej. 255.255.255.0): ")
@@ -120,14 +120,14 @@ def agregar_loopback():
     else:
         print("Error al crear la interfaz Loopback:", response.status_code, response.text)
 
-def eliminar_loopback():
+def eliminar_loopback(router):
     interfaz = input("Nombre de la interfaz Loopback a eliminar (ej. Loopback100): ")
 
     base_url = f"https://{router['host']}:{router['port']}/restconf/data"
     url = f"{base_url}/ietf-interfaces:interfaces/interface={interfaz}"
 
     
-    response = requests.delete(url, auth=(ROUTER["user"], ROUTER["password"]),
+    response = requests.delete(url, auth=(router["user"], router["password"]),
                                headers=HEADERS, verify=False)
 
     if response.status_code in [200, 204]:
@@ -137,7 +137,8 @@ def eliminar_loopback():
 
 
 
-def ver_hostname():
+def ver_hostname(router):
+    interfaz = input("Nombre de la interfaz (ej. GigabitEthernet1): ")
     base_url = f"https://{router['host']}:{router['port']}/restconf/data"
     url = f"{base_url}/ietf-interfaces:interfaces/interface={interfaz}"
     response = requests.get(url, auth=(router["user"], router["password"]),
