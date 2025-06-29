@@ -3,11 +3,19 @@ import json
 import os
 
 # Configuración inicial
-ROUTER = {
-    "host": "192.168.56.101",
-    "port": "443",
-    "user": "cisco",
-    "password": "cisco123!"
+ROUTERS = {
+    "router1": {
+        "host": "192.168.56.101",
+        "port": "443",
+        "user": "cisco",
+        "password": "cisco123!"
+    },
+    "router2": {
+        "host": "192.168.56.102",
+        "port": "443",
+        "user": "cisco",
+        "password": "cisco123!"
+    }
 }
 
 HEADERS = {
@@ -15,7 +23,7 @@ HEADERS = {
     "Content-Type": "application/yang-data+json"
 }
 
-BASE_URL = f"https://{ROUTER['host']}:{ROUTER['port']}/restconf/data"
+BASE_URL = None  # BASE_URL will be dynamically set based on the selected router
 
 # Desactiva advertencias de certificado
 requests.packages.urllib3.disable_warnings()
@@ -25,10 +33,24 @@ def limpiar():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 
-def ver_interfaces():
-    url = f"{BASE_URL}/ietf-interfaces:interfaces"
-    response = requests.get(url, auth=(ROUTER["user"], ROUTER["password"]),
+def seleccionar_router():
+    print("Seleccione el router:")
+    for idx, nombre in enumerate(ROUTERS.keys(), 1):
+        print(f"{idx}. {nombre}")
+    opcion = input("Opción: ")
+    nombres = list(ROUTERS.keys())
+    if opcion in ["1", "2"]:
+        return ROUTERS[nombres[int(opcion)-1]]
+    else:
+        print("Selección inválida. Usando router1 por defecto.")
+        return ROUTERS["router1"]
+
+def ver_interfaces(router):
+    base_url = f"https://{router['host']}:{router['port']}/restconf/data"
+    url = f"{base_url}/ietf-interfaces:interfaces"
+    response = requests.get(url, auth=(router["user"], router["password"]),
                             headers=HEADERS, verify=False)
+    
     
     if response.status_code == 200:
         interfaces = response.json()["ietf-interfaces:interfaces"]["interface"]
@@ -41,11 +63,12 @@ def ver_interfaces():
         print("Error al obtener interfaces:", response.status_code, response.text)
 
 
-def cambiar_descripcion_interfaz():
+def cambiar_descripcion_interfaz(router):
     interfaz = input("Nombre de la interfaz (ej. GigabitEthernet1): ")
     descripcion = input("Nueva descripción: ")
 
-    url = f"{BASE_URL}/ietf-interfaces:interfaces/interface={interfaz}"
+    base_url = f"https://{router['host']}:{router['port']}/restconf/data"
+    url = f"{base_url}/ietf-interfaces:interfaces/interface={interfaz}"
     payload = {
         "ietf-interfaces:interface": {
             "name": interfaz,
@@ -55,7 +78,7 @@ def cambiar_descripcion_interfaz():
         }
     }
 
-    response = requests.patch(url, auth=(ROUTER["user"], ROUTER["password"]),
+    response = requests.patch(url, auth=(router["user"], router["password"]),
                               headers=HEADERS, data=json.dumps(payload), verify=False)
     
     if response.status_code in [200, 204]:
@@ -64,12 +87,14 @@ def cambiar_descripcion_interfaz():
         print("Error al actualizar la descripción:", response.status_code, response.text)
 
 
-def agregar_loopback():
+def agregar_loopback(router):
     interfaz = input("Nombre de la interfaz Loopback (ej. Loopback100): ")
     ip = input("Dirección IP (ej. 10.1.1.1): ")
     mascara = input("Máscara de subred (ej. 255.255.255.0): ")
 
-    url = f"{BASE_URL}/ietf-interfaces:interfaces/interface={interfaz}"
+
+    base_url = f"https://{router['host']}:{router['port']}/restconf/data"
+    url = f"{base_url}/ietf-interfaces:interfaces/interface={interfaz}"
     payload = {
         "ietf-interfaces:interface": {
             "name": interfaz,
@@ -87,7 +112,7 @@ def agregar_loopback():
         }
     }
 
-    response = requests.put(url, auth=(ROUTER["user"], ROUTER["password"]),
+    response = requests.put(url, auth=(router["user"], router["password"]),
                             headers=HEADERS, data=json.dumps(payload), verify=False)
 
     if response.status_code in [200, 201, 204]:
@@ -95,12 +120,14 @@ def agregar_loopback():
     else:
         print("Error al crear la interfaz Loopback:", response.status_code, response.text)
 
-def eliminar_loopback():
+def eliminar_loopback(router):
     interfaz = input("Nombre de la interfaz Loopback a eliminar (ej. Loopback100): ")
 
-    url = f"{BASE_URL}/ietf-interfaces:interfaces/interface={interfaz}"
+    base_url = f"https://{router['host']}:{router['port']}/restconf/data"
+    url = f"{base_url}/ietf-interfaces:interfaces/interface={interfaz}"
 
-    response = requests.delete(url, auth=(ROUTER["user"], ROUTER["password"]),
+    
+    response = requests.delete(url, auth=(router["user"], router["password"]),
                                headers=HEADERS, verify=False)
 
     if response.status_code in [200, 204]:
@@ -110,9 +137,11 @@ def eliminar_loopback():
 
 
 
-def ver_hostname():
-    url = f"{BASE_URL}/Cisco-IOS-XE-native:native/hostname"
-    response = requests.get(url, auth=(ROUTER["user"], ROUTER["password"]),
+def ver_hostname(router):
+    interfaz = input("Nombre de la interfaz (ej. GigabitEthernet1): ")
+    base_url = f"https://{router['host']}:{router['port']}/restconf/data"
+    url = f"{base_url}/ietf-interfaces:interfaces/interface={interfaz}"
+    response = requests.get(url, auth=(router["user"], router["password"]),
                             headers=HEADERS, verify=False)
 
     if response.status_code == 200:
@@ -123,34 +152,36 @@ def ver_hostname():
 
 
 def menu():
+    router = seleccionar_router()
     while True:
         limpiar()
         print("=== Herramienta RESTCONF para Router ===")
+        print("Router seleccionado:", router['host'])
         print("1. Ver interfaces")
         print("2. Cambiar descripción de interfaz")
         print("3. Crear interfaz loopback")
         print("4. Eliminar interfaz loopback")
         print("5. Ver hostname")
-        print("6. Salir")
+        print("6. Cambiar de router")
+        print("7. Salir")
         opcion = input("Seleccione una opción: ")
-
         if opcion == "1":
-            ver_interfaces()
+            ver_interfaces(router)
         elif opcion == "2":
-            cambiar_descripcion_interfaz()
+            cambiar_descripcion_interfaz(router)
         elif opcion == "3":
-            agregar_loopback()
+            agregar_loopback(router)
         elif opcion == "4":
-            eliminar_loopback()
+            eliminar_loopback(router)
         elif opcion == "5":
-            ver_hostname()
-        elif opcion == "6"
+            ver_hostname(router)
+        elif opcion == "6":
+            router = seleccionar_router()
+        elif opcion == "7":
             break
         else:
             print("Opción inválida")
-
         input("\nPresione Enter para continuar...")
-
 
 if __name__ == "__main__":
     menu()
