@@ -2,7 +2,7 @@ import requests
 import json
 import os
 
-# Configuración inicial
+# Configuración iniciales
 ROUTERS = {
     "router1": {
         "host": "192.168.56.101",
