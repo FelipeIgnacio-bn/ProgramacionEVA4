@@ -29,10 +29,8 @@ BASE_URL = None  # BASE_URL will be dynamically set based on the selected router
 # Desactiva advertencias de certificado
 requests.packages.urllib3.disable_warnings()
 
-
 def limpiar():
     os.system('cls' if os.name == 'nt' else 'clear')
-
 
 def seleccionar_router():
     print("Seleccione el router:")
@@ -62,7 +60,6 @@ def ver_interfaces(router):
     else:
         print("Error al obtener interfaces:", response.status_code, response.text)
 
-
 def cambiar_descripcion_interfaz(router):
     interfaz = input("Nombre de la interfaz (ej. GigabitEthernet1): ")
     descripcion = input("Nueva descripción: ")
@@ -86,12 +83,10 @@ def cambiar_descripcion_interfaz(router):
     else:
         print("Error al actualizar la descripción:", response.status_code, response.text)
 
-
 def agregar_loopback(router):
     interfaz = input("Nombre de la interfaz Loopback (ej. Loopback100): ")
     ip = input("Dirección IP (ej. 10.1.1.1): ")
     mascara = input("Máscara de subred (ej. 255.255.255.0): ")
-
 
     base_url = f"https://{router['host']}:{router['port']}/restconf/data"
     url = f"{base_url}/ietf-interfaces:interfaces/interface={interfaz}"
@@ -134,8 +129,6 @@ def eliminar_loopback(router):
         print(f"Loopback {interfaz} eliminada con éxito.")
     else:
         print("Error al eliminar la interfaz Loopback:", response.status_code, response.text)
-
-
 
 def ver_hostname(router):
     base_url = f"https://{router['host']}:{router['port']}/restconf/data"
@@ -190,7 +183,6 @@ def ver_rutas(router):
                             print(f"Destino: {destino}, Next-hop: {next_hop}")
     else:
         print("Error al obtener las rutas:", response.status_code, response.text)
-
 
 def menu():
     router = seleccionar_router()
