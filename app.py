@@ -198,7 +198,7 @@ def menu():
         elif opcion == "6":
             router = seleccionar_router()
         elif opcion == "7":
-            ver_rutas()
+            ver_rutas(router)
         elif opcion == "8":
             break
         else:
