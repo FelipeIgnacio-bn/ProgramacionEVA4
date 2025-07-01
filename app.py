@@ -1,11 +1,12 @@
 import requests
+from requests.auth import HTTPBasicAuth
 import json
 import os
 
 # Configuración inicial
 ROUTERS = {
     "router1": {
-        "host": "192.168.56.101",
+        "host": "192.168.3.232",
         "port": "443",
         "user": "cisco",
         "password": "cisco123!"
@@ -50,8 +51,7 @@ def ver_interfaces(router):
     url = f"{base_url}/ietf-interfaces:interfaces"
     response = requests.get(url, auth=(router["user"], router["password"]),
                             headers=HEADERS, verify=False)
-    
-    
+    # Verifica si la respuesta es exitosa
     if response.status_code == 200:
         interfaces = response.json()["ietf-interfaces:interfaces"]["interface"]
         print("\n--- Interfaces ---")
@@ -138,17 +138,38 @@ def eliminar_loopback(router):
 
 
 def ver_hostname(router):
-    interfaz = input("Nombre de la interfaz (ej. GigabitEthernet1): ")
     base_url = f"https://{router['host']}:{router['port']}/restconf/data"
-    url = f"{base_url}/ietf-interfaces:interfaces/interface={interfaz}"
+    url = f"{base_url}/Cisco-IOS-XE-native:native/hostname"
     response = requests.get(url, auth=(router["user"], router["password"]),
                             headers=HEADERS, verify=False)
-
     if response.status_code == 200:
         hostname = response.json().get("Cisco-IOS-XE-native:hostname", "No disponible")
         print(f"\nHostname del router: {hostname}")
     else:
         print("Error al obtener el hostname:", response.status_code, response.text)
+
+def cambiar_hostname(router_ip, usuario, password, nuevo_hostname):
+    url = f"https://{router_ip}/restconf/data/Cisco-IOS-XE-native:native/hostname"
+    headers = {
+        "Content-Type": "application/yang-data+json",
+        "Accept": "application/yang-data+json"
+    }
+    payload = {
+        "Cisco-IOS-XE-native:hostname": nuevo_hostname
+    }
+
+    response = requests.put(
+        url,
+        json=payload,
+        headers=headers,
+        auth=HTTPBasicAuth(usuario, password),
+        verify=False
+    )
+
+    if response.status_code in [200, 204]:
+        print("Hostname cambiado correctamente.")
+    else:
+        print(f"Error al cambiar hostname: {response.status_code}\n{response.text}")
 
 def ver_rutas(router):
     base_url = f"https://{router['host']}:{router['port']}/restconf/data"
@@ -168,7 +189,8 @@ def ver_rutas(router):
                             next_hop = ruta["next-hop"]["next-hop-address"]
                             print(f"Destino: {destino}, Next-hop: {next_hop}")
     else:
-        print("Error al obtener rutas:", response.status_code, response.text)
+        print("Error al obtener las rutas:", response.status_code, response.text)
+
 
 def menu():
     router = seleccionar_router()
@@ -182,8 +204,9 @@ def menu():
         print("4. Eliminar interfaz loopback")
         print("5. Ver hostname")
         print("6. Cambiar de router")
-        print("7. Ver rutas")
-        print("8. Salir")
+        print("7. Cambiar Hostname")
+        print("8. Ver rutas")
+        print("9. Salir")
         opcion = input("Seleccione una opción: ")
         if opcion == "1":
             ver_interfaces(router)
@@ -198,8 +221,12 @@ def menu():
         elif opcion == "6":
             router = seleccionar_router()
         elif opcion == "7":
-            ver_rutas(router)
+            nuevo_hostname = input("Introduce el nuevo hostname para el router: ")
+            cambiar_hostname(router['host'], router['user'], router['password'], nuevo_hostname)
         elif opcion == "8":
+            ver_rutas(router)
+        elif opcion == "9":
+            print("Saliendo...")
             break
         else:
             print("Opción inválida")
