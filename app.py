@@ -150,6 +150,25 @@ def ver_hostname(router):
     else:
         print("Error al obtener el hostname:", response.status_code, response.text)
 
+def ver_rutas(router):
+    base_url = f"https://{router['host']}:{router['port']}/restconf/data"
+    url = f"{base_url}/ietf-routing:routing"
+    response = requests.get(url, auth=(router["user"], router["password"]),
+                            headers=HEADERS, verify=False)
+
+    if response.status_code == 200:
+        rutas = response.json().get("ietf-routing:routing", {}).get("routing-instance", [])
+        print("\n--- Rutas ---")
+        for instancia in rutas:
+            if "routing-protocols" in instancia:
+                for protocolo in instancia["routing-protocols"]["routing-protocol"]:
+                    if "static-routes" in protocolo:
+                        for ruta in protocolo["static-routes"]["ipv4"]["route"]:
+                            destino = ruta["destination-prefix"]
+                            next_hop = ruta["next-hop"]["next-hop-address"]
+                            print(f"Destino: {destino}, Next-hop: {next_hop}")
+    else:
+        print("Error al obtener rutas:", response.status_code, response.text)
 
 def menu():
     router = seleccionar_router()
@@ -163,7 +182,8 @@ def menu():
         print("4. Eliminar interfaz loopback")
         print("5. Ver hostname")
         print("6. Cambiar de router")
-        print("7. Salir")
+        print("7. Ver rutas")
+        print("8. Salir")
         opcion = input("Seleccione una opción: ")
         if opcion == "1":
             ver_interfaces(router)
@@ -178,6 +198,8 @@ def menu():
         elif opcion == "6":
             router = seleccionar_router()
         elif opcion == "7":
+            ver_rutas()
+        elif opcion == "8":
             break
         else:
             print("Opción inválida")
