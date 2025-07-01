@@ -9,13 +9,15 @@ ROUTERS = {
         "host": "192.168.3.232",
         "port": "443",
         "user": "cisco",
-        "password": "cisco123!"
+        "password": "cisco123!",
+        "capa": distribucion"
     },
     "router2": {
         "host": "192.168.56.102",
         "port": "443",
         "user": "cisco",
-        "password": "cisco123!"
+        "password": "cisco123!",
+        "capa": "distribucion"
     }
 }
 
@@ -35,7 +37,7 @@ def limpiar():
 def seleccionar_router():
     print("Seleccione el router:")
     for idx, nombre in enumerate(ROUTERS.keys(), 1):
-        print(f"{idx}. {nombre}")
+        print(f"{idx}. {nombre}. {capa}")
     opcion = input("Opción: ")
     nombres = list(ROUTERS.keys())
     if opcion in ["1", "2"]:
